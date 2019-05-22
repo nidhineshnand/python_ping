@@ -11,7 +11,7 @@ def dijkstra_generalized(graph, source, weight='weight',
                          infinity=None,
                          plus=None,
                          less=None,
-                         min=None):
+                         ):
     """
     Least-cost or widest paths via Dijkstra's algorithm.
     """
@@ -27,12 +27,13 @@ def dijkstra_generalized(graph, source, weight='weight',
     N = frozenset(graph.nodes())
     NPrime = {u}  # i.e. "set([u])"
     D = dict.fromkeys(N, math.inf)
-    P = dict.fromkeys(N, math.inf)
+    P = dict.fromkeys(N, [])
 
     # Initialization
     for v in N:
         if graph.has_edge(u, v):
             D[v] = c(u, v)
+            P[v] = [u]
     D[u] = 0  # over-write inf entry for source
 
     # Loop
@@ -45,6 +46,6 @@ def dijkstra_generalized(graph, source, weight='weight',
                 DvNew = D[w] + c(w, v)
                 if DvNew < D[v]:
                     D[v] = DvNew
-                    P[v] = v
+                    P[v] = [w]
 
     return P, D
