@@ -1,6 +1,7 @@
 import json
 import os
 from routing import dijkstra_generalized
+from routing import forwarding
 
 filename = os.path.join('.', 'KuroseRoss5-15.json')  # modify as required
 netjson = json.load(open(filename))
@@ -18,3 +19,6 @@ graph.add_edges_from((
 p, d = dijkstra_generalized(graph, "u", "cost")
 print(p)
 print(d)
+
+t = forwarding(p, d)
+print(t)

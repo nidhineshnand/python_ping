@@ -4,7 +4,23 @@ def forwarding(predecessor, source):
     """ 
     Compute a forwarding table from a predecessor list. 
     """
-    # TODO
+    nodes = list(source.keys())
+    w, Dw = min(source.items(), key=lambda item: item[1])
+    nodes.remove(w)
+    T = dict.fromkeys(nodes, [])
+
+
+    for n in nodes:
+        nextnode = n
+        while nextnode != w:
+            T[n] = [w, nextnode]
+            nextnode = predecessor[nextnode][0]
+
+
+    return T
+
+
+
 
 
 def dijkstra_generalized(graph, source, weight='weight',
@@ -15,7 +31,7 @@ def dijkstra_generalized(graph, source, weight='weight',
     """
     Least-cost or widest paths via Dijkstra's algorithm.
     """
-    # TODO: Please work from Lab 1 code
+    # Removed min=None
 
     import math
     # Definitions consistent with Kurose & Ross
