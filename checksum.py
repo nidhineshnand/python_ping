@@ -7,11 +7,11 @@ def internet_checksum(data, total=0x0):
     1. https://tools.ietf.org/html/rfc1071
     2. http://www.netfor2.com/checksum.html
     '''
-	# TODO: Implement this function and return the checksum
+    # TODO: Implement this function and return the checksum
 
     #Slicing bytes to iterate over it
     L = [data[i:i+1] for i in range(len(data))]
-    sum = 0;
+    sum = 0
 
     #Getting sum
     for evens in L[::2]:
@@ -22,6 +22,7 @@ def internet_checksum(data, total=0x0):
 
 
     hexsum = hex(sum)
+    print("initial " + hexsum)
     hexsum = hexsum[2:]
 
     carry, value = split_carry(hexsum)
@@ -30,12 +31,15 @@ def internet_checksum(data, total=0x0):
         hexsum = int(value, 16) + int(carry, 16)
         carry, value = split_carry(hex(hexsum)[2:])
 
-    print(hex(hexsum))
-    return hextat_complement(hexsum)
+    hexsum = hextat_complement(hexsum)
+    checksum = int(hexsum, 2)
+    checksum = checksum >> 8 | (checksum << 8 & 0xff00)
+
+    return bin(checksum)
 
 def hextat_complement(x):
     mask = 0xffff
-    return bin(~x & mask)[2:]
+    return bin(~int(x) & mask)
 
 
 

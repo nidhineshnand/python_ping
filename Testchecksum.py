@@ -4,5 +4,5 @@ from checksum import internet_checksum
 v = hextat_complement(300)
 #print(v)
 
-result = internet_checksum(bytes([0, 1, 242, 3, 244, 245, 246, 247]))
+result = internet_checksum(bytes.fromhex('E34F2396442799F3'))
 print(hex(int(result, 2)))

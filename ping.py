@@ -4,6 +4,7 @@ import sys
 import socket
 import struct
 import time
+from checksum import internet_checksum
 
 import collections
 from checksum import internet_checksum
@@ -30,18 +31,20 @@ ICMP_STRUCT_FIELDS = "BBHHH"  # for use with struct.pack/unpack
 #
 # TODO: Define ChecksumError class
 #
+class ChecksumError(Exception):
+    pass
 
 
 # Note that TimeoutError already exists in the Standard Library
-#class TimeoutError(PingError):
+# class TimeoutError(PingError):
 #    pass
 
 
 # See IETF RFC 792: https://tools.ietf.org/html/rfc792
 # NB: The order of the fields *is* significant
 ICMPMessage = collections.namedtuple('ICMPMessage',
-                                  ['type', 'code', 'checksum',
-                                   'identifier', 'sequence_number'])
+                                     ['type', 'code', 'checksum',
+                                      'identifier', 'sequence_number'])
 # For ICMP type field:
 # See https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol
 #     http://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml
@@ -51,9 +54,9 @@ ECHO_REPLY = ICMPTypeCode(0, 0)
 
 
 def this_instant():
-	# TODO: Decide which of the following values to return here:
-	# time.clock(), time.perf_counter(), time.process_time()
-    return None
+    # TODO: Decide which of the following values to return here:
+    # time.clock(), time.perf_counter(), time.process_time()
+    return time.perf_counter()
 
 
 def ping(client_socket, dest_host, client_id, seq_no=0):
@@ -63,19 +66,19 @@ def ping(client_socket, dest_host, client_id, seq_no=0):
 
     def icmp_header(host_checksum):
         message = ICMPMessage(
-                    type=None,  # TODO: Use appropriate argument here
-                    code=None,  # TODO: Use appropriate argument here
-                    checksum=host_checksum,
-                    identifier=client_id,
-                    sequence_number=seq_no)
+            type=8,  # TODO: Use appropriate argument here
+            code=0,  # TODO: Use appropriate argument here
+            checksum=host_checksum,
+            identifier=client_id,
+            sequence_number=seq_no)
         return struct.pack(ICMP_STRUCT_FIELDS, *message)
 
-	# TODO: Please study these lines carefully,
-	#       noting that "icmp_pack()" (defined above) is called *twice*
+    # TODO: Please study these lines carefully,
+    #       noting that "icmp_pack()" (defined above) is called *twice*
     icmp_payload = struct.pack('d', this_instant())  # double-precision float
     icmp_packet_without_checksum = icmp_header(0) + icmp_payload
     checksum = internet_checksum(icmp_packet_without_checksum)
-    icmp_packet = icmp_header(checksum) + icmp_payload
+    icmp_packet = icmp_header(int(checksum, 2)) + icmp_payload
 
     #
     # TODO: Please note that that "icmp_packet" is the
@@ -85,29 +88,28 @@ def ping(client_socket, dest_host, client_id, seq_no=0):
     # Note: socket.gethostbyname() returns the host name
     # unchanged if it is already in IPv4 address format.
     dest_host = socket.gethostbyname(dest_host)
-
     #
-	# TODO:
-	# 1. Call sendto() on socket to send packet to destination host
+    # TODO:
+    # 1. Call sendto() on socket to send packet to destination host
     # 2. Call recvfrom() on socket to receive datagram
-	#    (Note: A time-out exception might be raised here).
+    #    (Note: A time-out exception might be raised here).
     # 2. Store this_instant() at which datagram was received
-	# 3. Extract ICMP packet from datagram i.e. drop IP header (20 bytes)
-	#     e.g. "icmp_packet = datagram[20:]"
-	# 4. Compute checksum on ICMP response packet (header and payload);
-	#     this will hopefully come to zero
-	# 5. Raise exception if checksum is nonzero
-	# 6. Extract ICMP response header from ICMP packet (8 bytes) and
-	#     unpack binary response data to obtain ICMPMessage "response"
-	#     that we'll return with the round-trip time (Step 9, below);
-	#     notice that this namedstruct is printed in the sample
-	#     command line output given in the assignment description.
-	#     e.g. "Reply from 151.101.0.223 in 5ms: ICMPMessage(type=0, code=0, checksum=48791, identifier=33540, sequence_number=0)"
-	# 7. Extract ICMP response payload (remaining bytes) and unpack
-	#     binary data to recover "time sent"
-	# 8. Compute round-trip time from "time sent"
-	# 9. Return "(round-trip time in milliseconds, response)"
-	#
+    # 3. Extract ICMP packet from datagram i.e. drop IP header (20 bytes)
+    #     e.g. "icmp_packet = datagram[20:]"
+    # 4. Compute checksum on ICMP response packet (header and payload);
+    #     this will hopefully come to zero
+    # 5. Raise exception if checksum is nonzero
+    # 6. Extract ICMP response header from ICMP packet (8 bytes) and
+    #     unpack binary response data to obtain ICMPMessage "response"
+    #     that we'll return with the round-trip time (Step 9, below);
+    #     notice that this namedstruct is printed in the sample
+    #     command line output given in the assignment description.
+    #     e.g. "Reply from 151.101.0.223 in 5ms: ICMPMessage(type=0, code=0, checksum=48791, identifier=33540, sequence_number=0)"
+    # 7. Extract ICMP response payload (remaining bytes) and unpack
+    #     binary data to recover "time sent"
+    # 8. Compute round-trip time from "time sent"
+    # 9. Return "(round-trip time in milliseconds, response)"
+    #
     # If things go wrong
     # ==================
     # You might like to check ("assert") that:
@@ -116,6 +118,33 @@ def ping(client_socket, dest_host, client_id, seq_no=0):
     # 3. Identifier field of ICMP response header is client_id
     # 4. len() of ICMP response payload is struct.calcsize('d')
     #
+
+    # Sending packet
+    client_socket.sendto(icmp_packet, (dest_host, 1))
+
+    # Getting packet back and the time it was received
+    datagram, addr = client_socket.recvfrom(65535)
+    log_time = this_instant()
+
+    icmp_packet_rec = datagram[20:]
+
+
+    if internet_checksum(icmp_packet_rec) == 0:
+        raise Exception("Checksum exception")
+
+    icmp_header_rec = icmp_packet_rec[:8]
+    print(icmp_header_rec)
+    # Getting ICMP header
+    response_header = ICMPMessage(*struct.unpack(ICMP_STRUCT_FIELDS, icmp_header_rec))
+
+    print(icmp_header_rec[8:16])
+    # Getting the time sent from the payload
+    time_sent = struct.unpack("d", datagram[28:28 + struct.calcsize("d")])[0]
+
+    rtt = log_time - time_sent
+
+    return rtt * 1000, response_header
+
 
 def verbose_ping(host, timeout=2.0, count=4, log=print):
     """
@@ -130,19 +159,23 @@ def verbose_ping(host, timeout=2.0, count=4, log=print):
         return
 
     #
-	# TODO: Print suitable heading
-	#       e.g. log("Contacting {} with {} bytes of data ".format(...))
+    # TODO: Print suitable heading
+    #       e.g. log("Contacting {} with {} bytes of data ".format(...))
     #
+    log("Contacting host {} with 10 bytes of data", format(host))
 
     round_trip_times = []
 
     for seq_no in range(count):
         try:
             #
-			# TODO: Open socket using "with" statement
-			#
-			# TODO: set time-out duration (in seconds) on socket
-			#
+            # TODO: Open socket using "with" statement
+            #
+            # TODO: set time-out duration (in seconds) on socket
+            #
+
+            socket.setdefaulttimeout(timeout)
+            with socket.socket(family=socket.AF_INET, type=socket.SOCK_RAW,proto=socket.getprotobyname("icmp")) as client_socket:
 
                 # "The Identifier and Sequence Number can be used by the
                 # client to match the reply with the request that caused the
@@ -154,24 +187,28 @@ def verbose_ping(host, timeout=2.0, count=4, log=print):
                 # -- https://en.wikipedia.org/wiki/Ping_(networking_utility)
                 client_id = os.getpid() & RIGHT_HEXTET
 
-                delay, response = ping(client_socket,
-                                   host,
-                                   client_id=client_id,
-                                   seq_no=seq_no)
+                delay, response = ping(client_socket, host, client_id, seq_no=seq_no)
+
+            client_socket.close()
 
             log("Reply from {:s} in {}ms: {}".format(host_ip, delay, response))
 
-			#
+            #
             # TODO: Append "delay" to round_trip_times
-			#
+            #
+            round_trip_times.append(delay)
 
-		# TODO:
+        # TODO:
         # catch time-out error:
         #     handle time-out error i.e. log(...)
+        except TimeoutError:
+            log("time out error")
 
-		# TODO:
+        # TODO:
         # catch check-sum error
         #     handle checksum-error i.e. log(...)
+        except ChecksumError:
+            log("check sum error")
 
         except OSError as error:
             log("OS error: {}. Please check name.".format(error.strerror))
@@ -182,38 +219,47 @@ def verbose_ping(host, timeout=2.0, count=4, log=print):
                     " only be sent from processes running as root.")
             break
 
-	#
-	# TODO: Print packet statistics header
-	# TODO: Compute & print packet statistics
-	#       i.e. "how many packets received and lost?"
-	#
-
-	#
+    #
+    # TODO: Print packet statistics header
+    # TODO: Compute & print packet statistics
+    #       i.e. "how many packets received and lost?"
+    #
+    # Computing packets
+    recieved = len(round_trip_times)
+    lost = count - recieved
+    log("Recievecd:{}, Lost: {}".format(recieved, lost))
+    #
     # TODO: "if received more than 0 packets":
-	#    TODO: Compute & print statistics on round-trip times
-	#          i.e. Minimum, Maximum, Average
-	#
+    #    TODO: Compute & print statistics on round-trip times
+    #          i.e. Minimum, Maximum, Average
+    #
+    if recieved > 0:
+        minimin = min(round_trip_times)
+        maximum = max(round_trip_times)
+        average = sum(round_trip_times) / len(round_trip_times)
+        log("Average: {}, Maximum: {}, Minimum{}".format(average, maximum, minimin))
 
 
 if __name__ == '__main__':
 
     import argparse
+
     parser = argparse.ArgumentParser(description='Test a host.')
     parser.add_argument('-w', '--timeout',
-                        metavar=None,  # TODO: Specify this argument
+                        metavar='timeout',
                         type=int,
-                        default=None,  # TODO: Specify this argument
+                        default=1000,
                         help='Timeout to wait for each reply (milliseconds).')
     parser.add_argument('-c', '--count',
                         metavar='num',
-                        type=None,  # TODO: Specify this argument
+                        type=int,
                         default=4,
-                        help=None)  # TODO: Specify this argument
+                        help='Number of echo requests to send')
     parser.add_argument('hosts',
                         metavar='host',
                         type=str,
                         nargs='+',
-                        help=None)  # TODO: Specify this argument
+                        help='URL or IPv4 address of target host(s)')
     args = parser.parse_args()
 
     for host in args.hosts:
