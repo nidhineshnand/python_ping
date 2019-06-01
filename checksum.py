@@ -27,12 +27,15 @@ def internet_checksum(data, total=0x0):
 
     carry, value = split_carry(hexsum)
 
+    # Turning hexsum it to an int value so that it can be compared
+    hexsum = int(value, 16)
+
     while carry is not '':
         hexsum = int(value, 16) + int(carry, 16)
         carry, value = split_carry(hex(hexsum)[2:])
 
-    hexsum = hextat_complement(hexsum)
-    checksum = int(hexsum, 2)
+    hexsumcomp = hextat_complement(hexsum)
+    checksum = int(hexsumcomp, 2)
     checksum = checksum >> 8 | (checksum << 8 & 0xff00)
 
     return bin(checksum)

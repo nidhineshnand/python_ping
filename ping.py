@@ -128,8 +128,9 @@ def ping(client_socket, dest_host, client_id, seq_no=0):
 
     icmp_packet_rec = datagram[20:]
 
+    print(internet_checksum(icmp_packet_rec))
 
-    if internet_checksum(icmp_packet_rec) == 0:
+    if int(internet_checksum(icmp_packet_rec), 2) != 0:
         raise Exception("Checksum exception")
 
     icmp_header_rec = icmp_packet_rec[:8]
