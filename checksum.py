@@ -9,20 +9,18 @@ def internet_checksum(data, total=0x0):
     '''
     # TODO: Implement this function and return the checksum
 
-    #Slicing bytes to iterate over it
+    # Slicing into 2 bytes to iterate over it
     L = [data[i:i+1] for i in range(len(data))]
     sum = 0
 
-    #Getting sum
+    # Getting sum by adding the 16 bit numbers
     for evens in L[::2]:
-        sum+= int.from_bytes(evens, byteorder='big') * 256
+        sum += int.from_bytes(evens, byteorder='big') * 256
 
     for odds in L[1::2]:
-        sum+= int.from_bytes(odds, byteorder='big')
-
+        sum += int.from_bytes(odds, byteorder='big')
 
     hexsum = hex(sum)
-    print("initial " + hexsum)
     hexsum = hexsum[2:]
 
     carry, value = split_carry(hexsum)
@@ -36,14 +34,16 @@ def internet_checksum(data, total=0x0):
 
     hexsumcomp = hextat_complement(hexsum)
     checksum = int(hexsumcomp, 2)
+
+    # Swapping bytes to satisfy the endiness of the internet
     checksum = checksum >> 8 | (checksum << 8 & 0xff00)
 
     return bin(checksum)
 
+
 def hextat_complement(x):
     mask = 0xffff
     return bin(~int(x) & mask)
-
 
 
 def split_carry(sum):
