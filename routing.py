@@ -10,7 +10,6 @@ def forwarding(predecessor, source):
 
     # Getting minimum node (initial node) and removing it from the list
     w, Dw = min(source.items(), key=lambda item: item[1])
-    nodes.remove(w)
     T = dict.fromkeys(nodes, [])
 
     # Looping through notes and getting the next hop node
@@ -18,6 +17,7 @@ def forwarding(predecessor, source):
         nextnode = n
         while nextnode != w:
             T[n] = [w, nextnode]
+            # This is presented in the from that was presented to us in the lectures
             nextnode = predecessor[nextnode][0]
 
     return T
