@@ -1,26 +1,26 @@
 # -*- coding: utf-8 -*-
 
 def forwarding(predecessor, source):
+
     """ 
     Compute a forwarding table from a predecessor list. 
     """
+    # Defining the list of nodes that will be checked
     nodes = list(source.keys())
+
+    # Getting minimum node (initial node) and removing it from the list
     w, Dw = min(source.items(), key=lambda item: item[1])
     nodes.remove(w)
     T = dict.fromkeys(nodes, [])
 
-
+    # Looping through notes and getting the next hop node
     for n in nodes:
         nextnode = n
         while nextnode != w:
             T[n] = [w, nextnode]
             nextnode = predecessor[nextnode][0]
 
-
     return T
-
-
-
 
 
 def dijkstra_generalized(graph, source, weight='weight',
@@ -28,12 +28,12 @@ def dijkstra_generalized(graph, source, weight='weight',
                          plus=None,
                          less=None,
                          ):
+    # Removed min=None
     """
     Least-cost or widest paths via Dijkstra's algorithm.
     """
-    # Removed min=None
-
     import math
+
     # Definitions consistent with Kurose & Ross
     u = source
 
@@ -52,7 +52,7 @@ def dijkstra_generalized(graph, source, weight='weight',
             P[v] = [u]
     D[u] = 0  # over-write inf entry for source
 
-    # Loop
+    # Loop through all nodes
     while NPrime != N:
         candidates = {w: D[w] for w in N if w not in NPrime}
         w, Dw = min(candidates.items(), key=lambda item: item[1])
