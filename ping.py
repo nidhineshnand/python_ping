@@ -79,7 +79,7 @@ def ping(client_socket, dest_host, client_id, seq_no=0):
     icmp_payload = struct.pack('d', this_instant())  # double-precision float
     icmp_packet_without_checksum = icmp_header(0) + icmp_payload
     checksum = internet_checksum(icmp_packet_without_checksum)
-    icmp_packet = icmp_header(int(checksum, 2)) + icmp_payload
+    icmp_packet = icmp_header(checksum) + icmp_payload
 
     #
     # TODO: Please note that that "icmp_packet" is the
@@ -134,7 +134,7 @@ def ping(client_socket, dest_host, client_id, seq_no=0):
     icmp_packet_rec = datagram[20:]
 
     # Checking validity of received packet
-    if int(internet_checksum(icmp_packet_rec), 2) != 0:
+    if internet_checksum(icmp_packet_rec) != 0:
         raise ChecksumError
 
     icmp_header_rec = icmp_packet_rec[:8]
@@ -178,9 +178,9 @@ def verbose_ping(host, timeout=2.0, count=4, log=print):
             # TODO: set time-out duration (in seconds) on socket
             #
 
-            socket.setdefaulttimeout(timeout)
-            with socket.socket(family=socket.AF_INET, type=socket.SOCK_RAW,proto=socket.getprotobyname("icmp")) as client_socket:
 
+            with socket.socket(family=socket.AF_INET, type=socket.SOCK_RAW,proto=socket.getprotobyname("icmp")) as client_socket:
+                client_socket.settimeout(timeout/MILLISEC_PER_SEC)
                 # "The Identifier and Sequence Number can be used by the
                 # client to match the reply with the request that caused the
                 # reply. In practice, most Linux systems use a unique
@@ -194,8 +194,8 @@ def verbose_ping(host, timeout=2.0, count=4, log=print):
                 delay, response = ping(client_socket, host, client_id, seq_no=seq_no)
 
             client_socket.close()
-
             log("Reply from {:s} in {}ms: {}".format(host_ip, round(delay), response))
+
 
             #
             # TODO: Append "delay" to round_trip_times
@@ -205,8 +205,8 @@ def verbose_ping(host, timeout=2.0, count=4, log=print):
         # TODO:
         # catch time-out error:
         #     handle time-out error i.e. log(...)
-        except TimeoutError:
-            log("Timeout Error: The ping request timed out")
+        except socket.timeout:
+            log("Request timed out after {}ms".format(timeout))
 
         # TODO:
         # catch check-sum error
@@ -231,7 +231,9 @@ def verbose_ping(host, timeout=2.0, count=4, log=print):
     # Computing packets
     received = len(round_trip_times)
     lost = count - received
-    log("Received: {}, Lost: {}".format(received, lost))
+    loss = round(lost/count)*100
+    log("Ping statistics for {}".format(host))
+    log("   Packets: Sent = {}, Received: {}, Lost: {} ({}% loss)".format(count, received, lost, loss))
 
     #
     # TODO: "if received more than 0 packets":
@@ -242,7 +244,7 @@ def verbose_ping(host, timeout=2.0, count=4, log=print):
         minimin = min(round_trip_times)
         maximum = max(round_trip_times)
         average = sum(round_trip_times) / len(round_trip_times)
-        log("Average: {}, Maximum: {}, Minimum: {}".format(round(average), round(maximum), round(minimin)))
+        log("Minimum = {}ms, Maximum = {}ms, Average = {}ms".format(round(minimin), round(maximum), round(average)))
 
 
 if __name__ == '__main__':

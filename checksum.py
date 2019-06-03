@@ -38,7 +38,7 @@ def internet_checksum(data, total=0x0):
     # Swapping bytes to satisfy the endiness of the internet
     checksum = checksum >> 8 | (checksum << 8 & 0xff00)
 
-    return bin(checksum)
+    return checksum
 
 
 def hextat_complement(x):
