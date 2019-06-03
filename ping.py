@@ -195,7 +195,7 @@ def verbose_ping(host, timeout=2.0, count=4, log=print):
 
             client_socket.close()
 
-            log("Reply from {:s} in {}ms: {}".format(host_ip, delay, response))
+            log("Reply from {:s} in {}ms: {}".format(host_ip, round(delay, 2), response))
 
             #
             # TODO: Append "delay" to round_trip_times
@@ -242,7 +242,7 @@ def verbose_ping(host, timeout=2.0, count=4, log=print):
         minimin = min(round_trip_times)
         maximum = max(round_trip_times)
         average = sum(round_trip_times) / len(round_trip_times)
-        log("Average: {}, Maximum: {}, Minimum: {}".format(average, maximum, minimin))
+        log("Average: {}, Maximum: {}, Minimum: {}".format(round(average, 2), round(maximum, 2), round(minimin, 2)))
 
 
 if __name__ == '__main__':
