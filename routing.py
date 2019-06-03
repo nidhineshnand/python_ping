@@ -16,18 +16,14 @@ def forwarding(predecessor, source):
     for n in nodes:
         nextnode = n
         while nextnode != w:
-            T[n] = [w, nextnode]
+            T[n] = (w, nextnode)
             # This is presented in the from that was presented to us in the lectures
             nextnode = predecessor[nextnode][0]
 
     return T
 
 
-def dijkstra_generalized(graph, source, weight='weight',
-                         infinity=None,
-                         plus=None,
-                         less=None,
-                         ):
+def dijkstra_generalized(graph, source, weight='weight'):
     # Removed min=None
     """
     Least-cost or widest paths via Dijkstra's algorithm.
