@@ -1,25 +1,25 @@
 # -*- coding: utf-8 -*-
 
+
 def forwarding(predecessor, source):
 
     """ 
     Compute a forwarding table from a predecessor list. 
     """
     # Defining the list of nodes that will be checked
-    nodes = list(source.keys())
+    nodes = list(predecessor.keys())
+    nodes.remove(source)
 
     # Getting minimum node (initial node) and removing it from the list
-    w, Dw = min(source.items(), key=lambda item: item[1])
     T = dict.fromkeys(nodes, [])
 
     # Looping through notes and getting the next hop node
     for n in nodes:
         nextnode = n
-        while nextnode != w:
-            T[n] = (w, nextnode)
+        while nextnode != source:
+            T[n] = (source, nextnode)
             # This is presented in the from that was presented to us in the lectures
             nextnode = predecessor[nextnode][0]
-
     return T
 
 

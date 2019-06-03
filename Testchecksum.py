@@ -1,9 +1,13 @@
 from checksum import hextat_complement
 from checksum import internet_checksum
 
-v = hextat_complement(300)
-#print(v)
+if __name__ == '__main__':
+    data = bytes.fromhex('0001f203f4f5f6f7')
+    checksum = internet_checksum(data)
+    assert checksum == 0x0d22
+    print('Test 1 passed')
 
-result = internet_checksum(bytes.fromhex('B9 C9 D9'))
-print(hex(int(result, 2)))
-print(int(result, 2))
+    data = bytes.fromhex('e34f2396442799f3')
+    checksum = internet_checksum(data)
+    assert checksum == 0xff1a
+    print('Test 2 passed')
